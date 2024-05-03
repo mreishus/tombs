@@ -240,11 +240,21 @@ static void zend_tombs_setup(zend_op_array *ops) {
     /* if we get to here, we wasted a marker */
 }
 
+
+// Called the first time a function is called.
+// We set up observers if it is a user function.
 static zend_observer_fcall_handlers zend_tombs_observer_init( zend_execute_data *execute_data ) {
-    // TODO: Only register for USER functions, instead of making the check in the observer
+    zend_function *func = EX(func);
+    if ( func->type == ZEND_INTERNAL_FUNCTION ) {
+        // We did not set up markers for PHP core functions, so we can skip them
+        return (zend_observer_fcall_handlers){NULL, NULL};
+    }
+
+    // It's a user function, so we set up observers
     return (zend_observer_fcall_handlers){zend_tombs_observer_begin, zend_tombs_observer_end};
 }
 
+// Called when a function is about to be executed, if zend_tombs_observer_init attached us to it.
 static void zend_tombs_observer_begin(zend_execute_data *execute_data)
 {
     zend_op_array *ops = (zend_op_array*) EX(func);
@@ -253,12 +263,6 @@ static void zend_tombs_observer_begin(zend_execute_data *execute_data)
               _marked   = 1;
 
     if (UNEXPECTED(NULL == ops->function_name)) {
-        return;
-    }
-
-    zend_function *func = EX(func);
-    if ( func->type == ZEND_INTERNAL_FUNCTION ) {
-        // We did not set up markers for PHP core functions, so we can skip them
         return;
     }
 
