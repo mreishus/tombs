@@ -32,6 +32,7 @@
 #endif
 
 #include "php.h"
+#include "zend_observer.h"
 #include "zend_tombs.h"
 #include "zend_tombs_strings.h"
 #include "zend_tombs_graveyard.h"
@@ -48,7 +49,10 @@ static int  zend_tombs_startup(zend_extension*);
 static void zend_tombs_shutdown(zend_extension *);
 static void zend_tombs_activate(void);
 static void zend_tombs_setup(zend_op_array*);
-static void zend_tombs_execute(zend_execute_data *);
+//static void zend_tombs_execute(zend_execute_data *);
+static zend_observer_fcall_handlers zend_tombs_observer_init( zend_execute_data *execute_data );
+static void zend_tombs_observer_end(zend_execute_data *execute_data, zval *retval);
+static void zend_tombs_observer_begin(zend_execute_data *execute_data);
 
 static void (*zend_execute_function)(zend_execute_data *) = NULL;
 
@@ -128,8 +132,11 @@ static int zend_tombs_startup(zend_extension *ze) {
 
     ze->handle = 0;
 
-    zend_execute_function = zend_execute_ex;
-    zend_execute_ex       = zend_tombs_execute;
+    // Old way:
+    /* zend_execute_function = zend_execute_ex; */
+    /* zend_execute_ex       = zend_tombs_execute; */
+    // New way:
+    zend_observer_fcall_register( zend_tombs_observer_init );
 
     return SUCCESS;
 }
@@ -233,6 +240,55 @@ static void zend_tombs_setup(zend_op_array *ops) {
     /* if we get to here, we wasted a marker */
 }
 
+static zend_observer_fcall_handlers zend_tombs_observer_init( zend_execute_data *execute_data ) {
+    // TODO: Only register for USER functions, instead of making the check in the observer
+    return (zend_observer_fcall_handlers){zend_tombs_observer_begin, zend_tombs_observer_end};
+}
+
+static void zend_tombs_observer_begin(zend_execute_data *execute_data)
+{
+    zend_op_array *ops = (zend_op_array*) EX(func);
+    zend_bool *marker   = NULL,
+              _unmarked = 0,
+              _marked   = 1;
+
+    if (UNEXPECTED(NULL == ops->function_name)) {
+        return;
+    }
+
+    zend_function *func = EX(func);
+    if ( func->type == ZEND_INTERNAL_FUNCTION ) {
+        // We did not set up markers for PHP core functions, so we can skip them
+        return;
+    }
+
+    /* php_printf("Executing function: %s\n", ZSTR_VAL(ops->function_name)); */
+    marker = __atomic_load_n(&ops->reserved[zend_tombs_resource], __ATOMIC_SEQ_CST);
+    /* php_printf("Marker address: %p\n", marker); */
+
+    if (UNEXPECTED(NULL == marker)) {
+        return;
+    }
+
+    if (__atomic_compare_exchange(
+        marker,
+        &_unmarked,
+        &_marked,
+        0,
+        __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST
+    )) {
+        /* php_printf("Vacating graveyard\n"); */
+        zend_tombs_graveyard_vacate(
+            zend_tombs_graveyard,
+            zend_tombs_markers_index(
+                zend_tombs_markers, marker));
+    }
+}
+
+static void zend_tombs_observer_end(zend_execute_data *execute_data, zval *retval) { }
+
+
+/*
 static void zend_tombs_execute(zend_execute_data *execute_data) {
     zend_op_array *ops = (zend_op_array*) EX(func);
     zend_bool *marker   = NULL,
@@ -265,6 +321,7 @@ static void zend_tombs_execute(zend_execute_data *execute_data) {
 _zend_tombs_execute_real:
     zend_execute_function(execute_data);
 }
+*/
 
 #if defined(ZTS) && defined(COMPILE_DL_TOMBS)
     ZEND_TSRMLS_CACHE_DEFINE();
