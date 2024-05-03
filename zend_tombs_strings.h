@@ -16,6 +16,8 @@
   +----------------------------------------------------------------------+
  */
 
+#include "php.h"
+
 #ifndef ZEND_TOMBS_STRINGS_H
 # define ZEND_TOMBS_STRINGS_H
 

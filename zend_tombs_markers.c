@@ -23,6 +23,7 @@
 # include "config.h"
 #endif
 
+#include "php.h"
 #include "zend.h"
 #include "zend_API.h"
 #include "zend_tombs.h"

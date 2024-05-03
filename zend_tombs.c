@@ -31,6 +31,7 @@
 # define ZEND_TOMBS_EXTENSION_API
 #endif
 
+#include "php.h"
 #include "zend_tombs.h"
 #include "zend_tombs_strings.h"
 #include "zend_tombs_graveyard.h"
