@@ -31,6 +31,7 @@ static zend_always_inline zend_long zend_tombs_markers_index(zend_tombs_markers_
 
 zend_tombs_markers_t* zend_tombs_markers_startup(zend_long slots);
 zend_bool** zend_tombs_markers_create(zend_tombs_markers_t *markers);
+zend_bool** zend_tombs_markers_get(zend_tombs_markers_t *markers, zend_long slot);
 void zend_tombs_markers_shutdown(zend_tombs_markers_t *markers);
 
 #endif	/* ZEND_TOMBS_MARKERS_H */

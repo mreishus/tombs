@@ -17,6 +17,7 @@ if test "$PHP_TOMBS" != "no"; then
         zend_tombs_strings.c \
         zend_tombs_markers.c \
         zend_tombs_graveyard.c \
+        zend_tombs_function_table.c \
         zend_tombs_io.c, 
         $ext_shared,,-DZEND_ENABLE_STATIC_TSRMLS_CACHE=1,,yes)
 

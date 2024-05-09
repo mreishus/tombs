@@ -39,11 +39,13 @@
 #include "zend_tombs_ini.h"
 #include "zend_tombs_io.h"
 #include "zend_tombs_markers.h"
+#include "zend_tombs_function_table.h"
 
 static zend_tombs_markers_t   *zend_tombs_markers;
 static zend_tombs_graveyard_t *zend_tombs_graveyard;
 static int                     zend_tombs_resource = -1;
 static pid_t                   zend_tombs_started = 0;
+static zend_tombs_function_table_t *zend_tombs_function_table;
 
 static int  zend_tombs_startup(zend_extension*);
 static void zend_tombs_shutdown(zend_extension *);
@@ -111,6 +113,16 @@ static int zend_tombs_startup(zend_extension *ze) {
     }
 
     if (!zend_tombs_io_startup(zend_tombs_ini_socket, zend_tombs_graveyard)) {
+        zend_tombs_graveyard_shutdown(zend_tombs_graveyard);
+        zend_tombs_markers_shutdown(zend_tombs_markers);
+        zend_tombs_strings_shutdown();
+        zend_tombs_ini_shutdown();
+
+        return SUCCESS;
+    }
+
+    if (!(zend_tombs_function_table = zend_tombs_function_table_startup(zend_tombs_ini_slots))) {
+        zend_tombs_io_shutdown();
         zend_tombs_graveyard_shutdown(zend_tombs_graveyard);
         zend_tombs_markers_shutdown(zend_tombs_markers);
         zend_tombs_strings_shutdown();
@@ -208,28 +220,38 @@ static void zend_tombs_setup(zend_op_array *ops) {
         }
     }
 
-    slot =
-        (zend_bool**)
-            &ops->reserved[zend_tombs_resource];
+    uint64_t hash = zend_tombs_hash_key(ops);
+    zend_tombs_function_entry_t *entry = zend_tombs_function_find_or_insert(hash, zend_tombs_function_table);
 
-    marker = zend_tombs_markers_create(zend_tombs_markers);
-
-    if (UNEXPECTED(NULL == marker)) {
-        /* no marker space left */
+    if (UNEXPECTED(NULL == entry)) {
+        // no function space left
         return;
     }
 
-    if (__atomic_compare_exchange_n(slot, &nil, marker, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)) {
-        zend_tombs_graveyard_populate(
-            zend_tombs_graveyard,
-            zend_tombs_markers_index(
-                zend_tombs_markers, (zend_bool*)marker),
-            ops);
+    if (entry->marker_index != -1) {
+        // Reuse existing marker and tomb
+        zend_long marker_index = entry->marker_index;
+        zend_bool **slot = (zend_bool**)(&ops->reserved[zend_tombs_resource]);
+        zend_bool **marker = zend_tombs_markers_get(zend_tombs_markers, marker_index);
+        if (__atomic_compare_exchange_n(slot, &nil, marker, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)) {
+        }
+    } else {
+        // Allocate new marker and tomb
+        zend_bool **slot = (zend_bool**)(&ops->reserved[zend_tombs_resource]);
+        zend_bool **marker = zend_tombs_markers_create(zend_tombs_markers);
+
+        if (UNEXPECTED(NULL == marker)) {
+            // no marker space left
+            return;
+        }
+
+        if (__atomic_compare_exchange_n(slot, &nil, marker, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)) {
+            zend_long marker_index = zend_tombs_markers_index(zend_tombs_markers, (zend_bool*)marker);
+            entry->marker_index = marker_index;
+            zend_tombs_graveyard_populate(zend_tombs_graveyard, marker_index, ops);
+        }
     }
-
-    /* if we get to here, we wasted a marker */
 }
-
 
 // Called the first time a function is called.
 // We set up observers if it is a user function.
@@ -257,6 +279,8 @@ static zend_always_inline void zend_tombs_observer_begin(zend_execute_data *exec
     }
 
     marker = __atomic_load_n(&ops->reserved[zend_tombs_resource], __ATOMIC_SEQ_CST);
+    zend_long marker_index = zend_tombs_markers_index(zend_tombs_markers, marker);
+
 
     if (UNEXPECTED(NULL == marker)) {
         return;
