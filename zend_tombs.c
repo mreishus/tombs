@@ -50,7 +50,6 @@ static void zend_tombs_shutdown(zend_extension *);
 static void zend_tombs_activate(void);
 static void zend_tombs_setup(zend_op_array*);
 static zend_observer_fcall_handlers zend_tombs_observer_init( zend_execute_data *execute_data );
-static void zend_tombs_observer_end(zend_execute_data *execute_data, zval *retval);
 static void zend_tombs_observer_begin(zend_execute_data *execute_data);
 
 ZEND_TOMBS_EXTENSION_API zend_extension_version_info extension_version_info = {
@@ -242,7 +241,7 @@ static zend_observer_fcall_handlers zend_tombs_observer_init( zend_execute_data 
     }
 
     // It's a user function, so we set up observers
-    return (zend_observer_fcall_handlers){zend_tombs_observer_begin, zend_tombs_observer_end};
+    return (zend_observer_fcall_handlers){zend_tombs_observer_begin, NULL};
 }
 
 // Called when a function is about to be executed, if zend_tombs_observer_init attached us to it.
@@ -276,8 +275,6 @@ static void zend_tombs_observer_begin(zend_execute_data *execute_data)
                 zend_tombs_markers, marker));
     }
 }
-
-static void zend_tombs_observer_end(zend_execute_data *execute_data, zval *retval) { }
 
 #if defined(ZTS) && defined(COMPILE_DL_TOMBS)
     ZEND_TSRMLS_CACHE_DEFINE();
