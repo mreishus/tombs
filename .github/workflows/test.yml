@@ -39,12 +39,8 @@ jobs:
       run: |
         php -m
 
-    - name: Find opcache path
-      run: |
-        php -r "echo ini_get('extension_dir');"
-
     - name: Run tests
       env:
-        TEST_PHP_ARGS: "-d zend_extension=/usr/lib/php/modules/opcache.so -d opcache.enable=1 -d opcache.enable_cli=1"
+        TEST_PHP_ARGS: "-d zend_extension=$(php -r 'echo ini_get(\"extension_dir\");')/opcache.so -d opcache.enable=1 -d opcache.enable_cli=1"
       run: make test
 
