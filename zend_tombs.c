@@ -257,9 +257,7 @@ static void zend_tombs_observer_begin(zend_execute_data *execute_data)
         return;
     }
 
-    /* php_printf("Executing function: %s\n", ZSTR_VAL(ops->function_name)); */
     marker = __atomic_load_n(&ops->reserved[zend_tombs_resource], __ATOMIC_SEQ_CST);
-    /* php_printf("Marker address: %p\n", marker); */
 
     if (UNEXPECTED(NULL == marker)) {
         return;
@@ -272,7 +270,6 @@ static void zend_tombs_observer_begin(zend_execute_data *execute_data)
         0,
         __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST
     )) {
-        /* php_printf("Vacating graveyard\n"); */
         zend_tombs_graveyard_vacate(
             zend_tombs_graveyard,
             zend_tombs_markers_index(
