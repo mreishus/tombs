@@ -245,7 +245,7 @@ static zend_observer_fcall_handlers zend_tombs_observer_init( zend_execute_data 
 }
 
 // Called when a function is about to be executed, if zend_tombs_observer_init attached us to it.
-static void zend_tombs_observer_begin(zend_execute_data *execute_data)
+static zend_always_inline void zend_tombs_observer_begin(zend_execute_data *execute_data)
 {
     zend_op_array *ops = (zend_op_array*) EX(func);
     zend_bool *marker   = NULL,
