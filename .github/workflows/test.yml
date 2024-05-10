@@ -1,0 +1,44 @@
+name: Run Tests
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1'
+        extensions: mbstring
+        tools: phpize, php-config
+
+    - name: Install PHP development package
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y php8.1-dev
+
+    - name: Prepare for build
+      run: |
+        phpize
+        ./configure
+        make
+        make install
+
+    - name: Check extension is loaded
+      run: |
+        php -m
+
+    - name: Run tests
+      run: make test
+
