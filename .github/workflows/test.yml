@@ -33,7 +33,7 @@ jobs:
         phpize
         ./configure
         make
-        make install
+        sudo make install
 
     - name: Check extension is loaded
       run: |
