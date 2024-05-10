@@ -1,5 +1,5 @@
 --TEST--
-Check if tomb is detected >1 (function)
+Check if opcache recompile leads to duplicate tombstones
 --EXTENSIONS--
 opcache
 --INI--
