@@ -8,7 +8,7 @@ opcache.enable_cli=1
 tombs.socket=tcp://127.0.0.1:8010
 --FILE--
 <?php
-// I had to run this test with "php run-tests.php -v tests/007.phpt", 
+// I had to run this test with "sudo make install", then "php run-tests.php -v tests/007.phpt",
 // for some reason "make test" could not find opcache.
 include "zend_tombs.inc";
 include "007_helper.php";
