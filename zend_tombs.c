@@ -49,12 +49,9 @@ static int  zend_tombs_startup(zend_extension*);
 static void zend_tombs_shutdown(zend_extension *);
 static void zend_tombs_activate(void);
 static void zend_tombs_setup(zend_op_array*);
-//static void zend_tombs_execute(zend_execute_data *);
 static zend_observer_fcall_handlers zend_tombs_observer_init( zend_execute_data *execute_data );
 static void zend_tombs_observer_end(zend_execute_data *execute_data, zval *retval);
 static void zend_tombs_observer_begin(zend_execute_data *execute_data);
-
-static void (*zend_execute_function)(zend_execute_data *) = NULL;
 
 ZEND_TOMBS_EXTENSION_API zend_extension_version_info extension_version_info = {
     ZEND_EXTENSION_API_NO,
@@ -132,10 +129,6 @@ static int zend_tombs_startup(zend_extension *ze) {
 
     ze->handle = 0;
 
-    // Old way:
-    /* zend_execute_function = zend_execute_ex; */
-    /* zend_execute_ex       = zend_tombs_execute; */
-    // New way:
     zend_observer_fcall_register( zend_tombs_observer_init );
 
     return SUCCESS;
@@ -159,8 +152,6 @@ static void zend_tombs_shutdown(zend_extension *ze) {
     zend_tombs_markers_shutdown(zend_tombs_markers);
     zend_tombs_strings_shutdown();
     zend_tombs_ini_shutdown();
-
-    zend_execute_ex = zend_execute_function;
 
     zend_tombs_started = 0;
 }
@@ -290,42 +281,6 @@ static void zend_tombs_observer_begin(zend_execute_data *execute_data)
 }
 
 static void zend_tombs_observer_end(zend_execute_data *execute_data, zval *retval) { }
-
-
-/*
-static void zend_tombs_execute(zend_execute_data *execute_data) {
-    zend_op_array *ops = (zend_op_array*) EX(func);
-    zend_bool *marker   = NULL,
-              _unmarked = 0,
-              _marked   = 1;
-
-    if (UNEXPECTED(NULL == ops->function_name)) {
-        goto _zend_tombs_execute_real;
-    }
-
-    marker = __atomic_load_n(&ops->reserved[zend_tombs_resource], __ATOMIC_SEQ_CST);
-
-    if (UNEXPECTED(NULL == marker)) {
-        goto _zend_tombs_execute_real;
-    }
-
-    if (__atomic_compare_exchange(
-        marker,
-        &_unmarked,
-        &_marked,
-        0,
-        __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST
-    )) {
-        zend_tombs_graveyard_vacate(
-            zend_tombs_graveyard,
-            zend_tombs_markers_index(
-                zend_tombs_markers, marker));
-    }
-
-_zend_tombs_execute_real:
-    zend_execute_function(execute_data);
-}
-*/
 
 #if defined(ZTS) && defined(COMPILE_DL_TOMBS)
     ZEND_TSRMLS_CACHE_DEFINE();
