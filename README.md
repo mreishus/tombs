@@ -1,6 +1,6 @@
 # Tombs
 
-[![Build Status](https://travis-ci.com/krakjoe/tombs.svg?branch=develop)](https://travis-ci.com/krakjoe/tombs)
+[![Run Tests](https://github.com/mreishus/tombs/actions/workflows/test.yml/badge.svg)](https://github.com/mreishus/tombs/actions/workflows/test.yml)
 
 Tombs is a Zend extension for PHP that provides a way to track if a piece of code is actually invoked. This concept is called [Tombstones](https://www.youtube.com/watch?v=29UXzfQWOhQ).  
 It uses Zend hooks to populate a graveyard at runtime, wherein a tomb is representative of every function that Zend has constructed. As Zend executes, functions that are used
@@ -91,6 +91,7 @@ On startup (MINIT) Tombs maps three regions of memory:
   - Markers   - a pointer to zend_bool in the reserved region of every op array
   - Strings   - region of memory for copying persistent strings: file names, class names, and function names
   - Graveyard - a tomb for each possible function
+  - Function Table - a hash table that maps functions to their corresponding markers and tombs, allowing reuse of existing entries for functions that have already been seen.
 
 All memory is shared among forks and threads, and Tombs uses atomics, for maximum glory.
 
@@ -109,8 +110,3 @@ Once allocated, a string is never free'd. We must be sure that even after the re
 ### Graveyard
 
 The executor function that Tombs installs updates the value of the marker when the function is entered. If the atomic set succeeds, the tomb is vacated.
-
-## TODO
-
-  - Tests
-  - CI
