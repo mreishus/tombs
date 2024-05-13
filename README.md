@@ -24,6 +24,11 @@ Here is a quick run down of how to use Tombs ...
   - `make`
   - `make install`
 
+## To Run Tests:
+
+  - `make test`
+  - `make test_opcache` // enables an extra test that requires opcache module
+
 ## To load Tombs:
 
 Tombs must be loaded as a Zend extension:

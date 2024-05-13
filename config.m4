@@ -23,3 +23,9 @@ if test "$PHP_TOMBS" != "no"; then
 
   PHP_SUBST(TOMBS_SHARED_LIBADD)
 fi
+
+AC_CONFIG_COMMANDS_PRE([cat >Makefile.tmp <<EOF
+-include LocalMakefileAdditions.mk
+EOF
+cat Makefile >> Makefile.tmp
+mv -f Makefile.tmp Makefile])
