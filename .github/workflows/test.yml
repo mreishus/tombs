@@ -14,10 +14,19 @@ jobs:
     strategy:
       matrix:
         php-version: ['8.1', '8.2', '8.3']
+        test-php-args: ["", "-M memcheck --show-mem"]
+
+    env:
+      NO_INTERACTION: 1
+      REPORT_EXIT_STATUS: 1
+      ZEND_DONT_UNLOAD_MODULES: 1
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Install valgrind
+      run: sudo apt-get update && sudo apt-get install -y valgrind libonig-dev
 
     - name: Set up PHP
       uses: shivammathur/setup-php@v2
@@ -39,9 +48,8 @@ jobs:
 
     - name: Run tests
       run: |
-        export NO_INTERACTION=1
         EXT_DIR=$(php -r "echo ini_get('extension_dir');")
-        export TEST_PHP_ARGS="-d zend_extension=${EXT_DIR}/opcache.so -d opcache.enable=1 -d opcache.enable_cli=1 -d open_basedir= -d output_buffering=0 -d memory_limit=-1"
+        export TEST_PHP_ARGS="-d zend_extension=${EXT_DIR}/opcache.so -d opcache.enable=1 -d opcache.enable_cli=1 -d open_basedir= -d output_buffering=0 -d memory_limit=-1 -q --show-diff ${{ matrix.test-php-args }}"
         echo $TEST_PHP_ARGS
         make test
 
