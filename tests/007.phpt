@@ -24,7 +24,7 @@ test4();
 zend_tombs_display("127.0.0.1", 8010);
 /*
 Bugged output (4 entries):
-{"location": {"file": "%s007.php", "start": 7, "end": 7}, "function": "test"}
+{"location": {"file": "%s007.php", "start": 6, "end": 6}, "function": "test"}
 {"location": {"file": "%s007_helper.php", "start": 3, "end": 3}, "function": "test3"}
 {"location": {"file": "%s007_helper.php", "start": 3, "end": 3}, "function": "test3"}
 {"location": {"file": "%s007_helper.php", "start": 6, "end": 6}, "function": "test4"}
@@ -32,6 +32,6 @@ Correct output below (2 entries):
  */
 ?>
 --EXPECTF--
-{"location": {"file": "%s007.php", "start": 7, "end": 7}, "function": "test"}
+{"location": {"file": "%s007.php", "start": 6, "end": 6}, "function": "test"}
 {"location": {"file": "%s007_helper.php", "start": 3, "end": 3}, "function": "test3"}
 
