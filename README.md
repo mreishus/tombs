@@ -8,7 +8,7 @@ have their tombs vacated. When the programmer connects to the Tombs socket, a ba
 
 # Requirements
 
-  - PHP7.1+
+  - PHP8.1+
   - unix
 
 *Note: Windows is unsupported, Tombs targets production ...*
