@@ -34,4 +34,3 @@ Correct output below (2 entries):
 --EXPECTF--
 {"location": {"file": "%s007.php", "start": 6, "end": 6}, "function": "test"}
 {"location": {"file": "%s007_helper.php", "start": 3, "end": 3}, "function": "test3"}
-
