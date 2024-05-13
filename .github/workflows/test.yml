@@ -42,7 +42,7 @@ jobs:
     - name: Run tests
       run: |
         EXT_DIR=$(php -r "echo ini_get('extension_dir');")
-        export TEST_PHP_ARGS="-d zend_extension=${EXT_DIR}/opcache.so -d opcache.enable=1 -d opcache.enable_cli=1"
+        export TEST_PHP_ARGS="-d zend_extension=${EXT_DIR}/opcache.so -d opcache.enable=1 -d opcache.enable_cli=1 -d 'open_basedir=' -d 'output_buffering=0' -d 'memory_limit=-1'"
         echo $TEST_PHP_ARGS
         make test
 
