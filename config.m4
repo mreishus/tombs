@@ -17,8 +17,15 @@ if test "$PHP_TOMBS" != "no"; then
         zend_tombs_strings.c \
         zend_tombs_markers.c \
         zend_tombs_graveyard.c \
+        zend_tombs_function_table.c \
         zend_tombs_io.c, 
         $ext_shared,,-DZEND_ENABLE_STATIC_TSRMLS_CACHE=1,,yes)
 
   PHP_SUBST(TOMBS_SHARED_LIBADD)
 fi
+
+AC_CONFIG_COMMANDS_PRE([cat >Makefile.tmp <<EOF
+-include LocalMakefileAdditions.mk
+EOF
+cat Makefile >> Makefile.tmp
+mv -f Makefile.tmp Makefile])
