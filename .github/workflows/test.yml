@@ -26,11 +26,6 @@ jobs:
         extensions: mbstring, opcache
         tools: phpize, php-config
 
-    - name: Install PHP development package
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y php${{ matrix.php-version }}-dev
-
     - name: Prepare for build
       run: |
         phpize
