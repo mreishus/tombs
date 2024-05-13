@@ -11,22 +11,20 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ['8.1', '8.2', '8.3']
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Set up PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: '8.1'
+        php-version: ${{ matrix.php-version }}
         extensions: mbstring, opcache
         tools: phpize, php-config
-
-    - name: Install PHP development package
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y php8.1-dev
 
     - name: Prepare for build
       run: |
