@@ -84,7 +84,7 @@ static int zend_tombs_startup(zend_extension *ze) {
 
     if (!zend_tombs_ini_socket && !zend_tombs_ini_dump) {
         zend_error(E_WARNING,
-            "[TOMBS] socket and dump are both disabled by configuration, "
+            "[TOMBS] socket and dump are both disabled by configuration, shutting down."
             "may be misconfigured");
         zend_tombs_ini_shutdown();
 
@@ -92,12 +92,14 @@ static int zend_tombs_startup(zend_extension *ze) {
     }
 
     if (!zend_tombs_strings_startup(zend_tombs_ini_strings)) {
+        zend_error(E_WARNING, "[TOMBS] failed to allocate strings, shutting down.");
         zend_tombs_ini_shutdown();
 
         return SUCCESS;
     }
 
     if (!(zend_tombs_markers = zend_tombs_markers_startup(zend_tombs_ini_slots))) {
+        zend_error(E_WARNING, "[TOMBS] failed to allocate markers, shutting down.");
         zend_tombs_strings_shutdown();
         zend_tombs_ini_shutdown();
 
@@ -105,6 +107,7 @@ static int zend_tombs_startup(zend_extension *ze) {
     }
 
     if (!(zend_tombs_graveyard = zend_tombs_graveyard_startup(zend_tombs_ini_slots))) {
+        zend_error(E_WARNING, "[TOMBS] failed to allocate graveyard, shutting down.");
         zend_tombs_markers_shutdown(zend_tombs_markers);
         zend_tombs_strings_shutdown();
         zend_tombs_ini_shutdown();
@@ -113,6 +116,7 @@ static int zend_tombs_startup(zend_extension *ze) {
     }
 
     if (!zend_tombs_io_startup(zend_tombs_ini_socket, zend_tombs_graveyard)) {
+        zend_error(E_WARNING, "[TOMBS] failed to start io, shutting down.");
         zend_tombs_graveyard_shutdown(zend_tombs_graveyard);
         zend_tombs_markers_shutdown(zend_tombs_markers);
         zend_tombs_strings_shutdown();
@@ -122,6 +126,7 @@ static int zend_tombs_startup(zend_extension *ze) {
     }
 
     if (!(zend_tombs_function_table = zend_tombs_function_table_startup(zend_tombs_ini_slots))) {
+        zend_error(E_WARNING, "[TOMBS] failed to allocate function table, shutting down.");
         zend_tombs_io_shutdown();
         zend_tombs_graveyard_shutdown(zend_tombs_graveyard);
         zend_tombs_markers_shutdown(zend_tombs_markers);
