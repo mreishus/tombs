@@ -41,6 +41,10 @@
 #include "zend_tombs_markers.h"
 #include "zend_tombs_function_table.h"
 
+#include "php_ini.h"
+#include "ext/standard/info.h"
+#include "SAPI.h"
+
 static zend_tombs_markers_t   *zend_tombs_markers;
 static zend_tombs_graveyard_t *zend_tombs_graveyard;
 static int                     zend_tombs_resource = -1;
@@ -79,8 +83,18 @@ ZEND_TOMBS_EXTENSION_API zend_extension zend_extension_entry = {
     STANDARD_ZEND_EXTENSION_PROPERTIES
 };
 
+static int is_cli_sapi() {
+    return strcmp(sapi_module.name, "cli") == 0;
+}
+
 static int zend_tombs_startup(zend_extension *ze) {
     zend_tombs_ini_startup();
+
+    if (is_cli_sapi()) {
+        zend_error(E_WARNING, "[TOMBS] cli temp disabled - shutting down.");
+        zend_tombs_ini_shutdown();
+        return SUCCESS;
+    }
 
     if (!zend_tombs_ini_socket && !zend_tombs_ini_dump) {
         zend_error(E_WARNING,
