@@ -40,7 +40,7 @@ zend_tombs_markers_t* zend_tombs_markers_startup(zend_long slots) {
     markers = (zend_tombs_markers_t*) zend_tombs_map(size);
 
     if (!markers) {
-        zend_error(E_WARNING, 
+        php_error_docref(NULL, E_WARNING, 
             "[TOMBS] Failed to allocate shared memory for markers");
         return NULL;
     }

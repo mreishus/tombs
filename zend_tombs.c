@@ -83,7 +83,7 @@ static int zend_tombs_startup(zend_extension *ze) {
     zend_tombs_ini_startup();
 
     if (!zend_tombs_ini_socket && !zend_tombs_ini_dump) {
-        zend_error(E_WARNING,
+        php_error_docref(NULL, E_WARNING,
             "[TOMBS] socket and dump are both disabled by configuration, "
             "may be misconfigured");
         zend_tombs_ini_shutdown();

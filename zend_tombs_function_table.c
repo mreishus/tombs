@@ -5,7 +5,7 @@ zend_tombs_function_table_t *zend_tombs_function_table_startup(zend_long slots) 
     zend_long function_table_size = slots * sizeof(zend_tombs_function_entry_t);
     zend_tombs_function_table_t *table = zend_tombs_map(sizeof(zend_tombs_function_table_t) + function_table_size);
     if (!table) {
-        zend_error(E_WARNING, "[TOMBS] Failed to allocate shared memory for function table");
+        php_error_docref(NULL, E_WARNING, "[TOMBS] Failed to allocate shared memory for function table");
         return NULL;
     }
 

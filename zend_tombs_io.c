@@ -124,7 +124,7 @@ zend_tombs_io_type_t zend_tombs_io_setup(char *uri, struct sockaddr **sa, int *s
             try = socket(un->sun_family, SOCK_STREAM, 0);
 
             if (try == -1) {
-                zend_error(E_WARNING,
+                php_error_docref(NULL, E_WARNING,
                     "[TOMBS] %s - cannot create socket for %s",
                     strerror(errno),
                     uri);
@@ -146,7 +146,7 @@ zend_tombs_io_type_t zend_tombs_io_setup(char *uri, struct sockaddr **sa, int *s
                 return type;
             }
 
-            zend_error(E_WARNING,
+            php_error_docref(NULL, E_WARNING,
                 "[TOMBS] %s - cannot create socket for %s",
                 strerror(errno),
                 uri);
@@ -169,7 +169,7 @@ zend_tombs_io_type_t zend_tombs_io_setup(char *uri, struct sockaddr **sa, int *s
             gai_errno = getaddrinfo(address, port, &hi, &ai);
 
             if (gai_errno != SUCCESS) {
-                zend_error(E_WARNING,
+                php_error_docref(NULL, E_WARNING,
                     "[TOMBS] %s - failed to get address for %s",
                     gai_strerror(gai_errno),
                     uri);
@@ -208,7 +208,7 @@ zend_tombs_io_type_t zend_tombs_io_setup(char *uri, struct sockaddr **sa, int *s
                 close(try);
             }
 
-            zend_error(E_WARNING,
+            php_error_docref(NULL, E_WARNING,
                 "[TOMBS] %s - cannot create socket for %s",
                 strerror(errno),
                 uri);
@@ -217,7 +217,7 @@ zend_tombs_io_type_t zend_tombs_io_setup(char *uri, struct sockaddr **sa, int *s
         } break;
 
         case ZEND_TOMBS_IO_UNKNOWN:
-            zend_error(E_WARNING,
+            php_error_docref(NULL, E_WARNING,
                 "[TOMBS] Failed to setup socket, %s is a malformed uri",
                 uri);
         break;
@@ -247,7 +247,7 @@ zend_bool zend_tombs_io_startup(char *uri, zend_tombs_graveyard_t *graveyard)
     }
 
     if (listen(ZTIO(descriptor), 256) != SUCCESS) {
-        zend_error(E_WARNING,
+        php_error_docref(NULL, E_WARNING,
             "[TOMBS] %s - cannot listen on %s, ",
             strerror(errno), uri);
         zend_tombs_io_shutdown();
@@ -257,7 +257,7 @@ zend_bool zend_tombs_io_startup(char *uri, zend_tombs_graveyard_t *graveyard)
     ZTIO(graveyard) = graveyard;
 
     if (pthread_create(&ZTIO(thread), NULL, zend_tombs_io_routine, NULL) != SUCCESS) {
-        zend_error(E_WARNING,
+        php_error_docref(NULL, E_WARNING,
             "[TOMBS] %s - cannot create thread for io on %s",
             strerror(errno), uri);
         zend_tombs_io_shutdown();
