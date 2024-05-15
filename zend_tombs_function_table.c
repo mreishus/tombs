@@ -69,3 +69,12 @@ zend_tombs_function_entry_t *zend_tombs_function_find_or_insert(uint64_t hash, z
 
     return &table->entries[slot];
 }
+
+void zend_tombs_function_table_shutdown(zend_tombs_function_table_t *table) {
+    if (table) {
+        zend_long function_table_size = table->size * sizeof(zend_tombs_function_entry_t);
+        zend_long total_size = sizeof(zend_tombs_function_table_t) + function_table_size;
+
+        zend_tombs_unmap(table, total_size);
+    }
+}

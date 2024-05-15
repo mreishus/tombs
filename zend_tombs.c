@@ -163,6 +163,7 @@ static void zend_tombs_shutdown(zend_extension *ze) {
         zend_tombs_graveyard_dump(zend_tombs_graveyard, zend_tombs_ini_dump);
     }
 
+    zend_tombs_function_table_shutdown(zend_tombs_function_table);
     zend_tombs_io_shutdown();
     zend_tombs_graveyard_shutdown(zend_tombs_graveyard);
     zend_tombs_markers_shutdown(zend_tombs_markers);

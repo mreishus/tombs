@@ -21,7 +21,8 @@ typedef struct _zend_tombs_function_table_t {
 
 
 uint64_t zend_tombs_hash_key(const zend_op_array *ops);
-zend_tombs_function_entry_t *zend_tombs_function_find_or_insert(uint64_t hash, zend_tombs_function_table_t *thetab);
 zend_tombs_function_table_t *zend_tombs_function_table_startup(zend_long slots);
+zend_tombs_function_entry_t *zend_tombs_function_find_or_insert(uint64_t hash, zend_tombs_function_table_t *thetab);
+void zend_tombs_function_table_shutdown(zend_tombs_function_table_t *table);
 
 #endif /* ZEND_TOMBS_FUNCTION_TABLE_H */
