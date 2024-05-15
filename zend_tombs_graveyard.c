@@ -152,6 +152,7 @@ static void zend_tombs_string_escape(zend_tombs_string_t *escaped, const zend_to
 }
 
 void zend_tombs_graveyard_dump_json(zend_tombs_graveyard_t *graveyard, int fd) {
+    zend_error(E_WARNING, "[TOMBS] Starting graveyard dump");
     zend_tomb_t *tomb = graveyard->tombs,
                 *end  = tomb + graveyard->slots;
 
@@ -161,6 +162,8 @@ void zend_tombs_graveyard_dump_json(zend_tombs_graveyard_t *graveyard, int fd) {
 
     while (tomb < end) {
         if (__atomic_load_n(&tomb->state.populated, __ATOMIC_SEQ_CST)) {
+            zend_error(E_WARNING, "[TOMBS] Dumping tomb");
+
             zend_tombs_graveyard_write_literal(fd, "{");
 
             zend_tombs_graveyard_write_literal(fd, "\"location\": {");
@@ -198,6 +201,8 @@ void zend_tombs_graveyard_dump_json(zend_tombs_graveyard_t *graveyard, int fd) {
 
         tomb++;
     }
+    zend_error(E_WARNING, "[TOMBS] Graveyard dump completed");
+
 }
 
 void zend_tombs_graveyard_dump_function(zend_tombs_graveyard_t *graveyard, int fd) {

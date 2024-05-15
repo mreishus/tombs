@@ -62,9 +62,14 @@ static void* zend_tombs_io_routine(void *arg) {
             address, 0,
             ZEND_TOMBS_IO_SIZE(ZTIO(type)));
 
+        //zend_error(E_WARNING, "[TOMBS] Waiting for client connection..."); // causes 502 bad gateway
         client = accept(ZTIO(descriptor), address, &length);
+        zend_error(E_WARNING, "[TOMBS] Client connected: %d", client);
+
 
         if (UNEXPECTED(FAILURE == client)) {
+            zend_error(E_WARNING, "[TOMBS] Accept failed: %s", strerror(errno));
+
             if (ECONNABORTED == errno ||
                 EINTR == errno) {
                 continue;
@@ -73,8 +78,12 @@ static void* zend_tombs_io_routine(void *arg) {
             break;
         }
 
+        zend_error(E_WARNING, "[TOMBS] Dumping graveyard to client: %d", client);
         zend_tombs_graveyard_dump(ZTIO(graveyard), client);
+        zend_error(E_WARNING, "[TOMBS] Graveyard dumped to client: %d", client);
+
         close(client);
+        zend_error(E_WARNING, "[TOMBS] Client connection closed: %d", client);
     } while (1);
 
     pefree(address, 1);
@@ -279,10 +288,12 @@ zend_bool zend_tombs_io_write(int fd, char *message, size_t length) {
                 continue;
             }
 
+            zend_error(E_WARNING, "[TOMBS] Write failed: %s", strerror(errno));
             return 0;
         }
 
         total += bytes;
+        zend_error(E_WARNING, "[TOMBS] Wrote %zd bytes, total: %zd", bytes, total);
     } while (total < length);
 
     return 1;
