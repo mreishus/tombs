@@ -234,48 +234,40 @@ static void zend_tombs_setup(zend_op_array *ops) {
         return;
     }
 
-    if (entry->marker_index != -1) {
-        // Reuse existing marker and tomb
+    // If the function table entry has a marker index of -1, allocate new marker and tomb.
+    zend_long expected_marker_index = -1;
+    if (__atomic_compare_exchange_n(&entry->marker_index, &expected_marker_index, -2, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)) {
+        // We won the race to allocate a new marker and tomb (and set the marker_index to -2 to indicate we're working on it)
+        zend_bool **slot = (zend_bool**)(&ops->reserved[zend_tombs_resource]);
+        zend_bool **marker = zend_tombs_markers_create(zend_tombs_markers);
+
+        if (UNEXPECTED(NULL == marker)) {
+            // no marker space left
+            // also reset the marker_index to -1
+            __atomic_store_n(&entry->marker_index, -1, __ATOMIC_SEQ_CST);
+            return;
+        }
+
+        // Here we're getting the index of the marker we just created and overwriting the -2 with it.
+        zend_long marker_index = zend_tombs_markers_index(zend_tombs_markers, (zend_bool*)marker);
+        __atomic_store_n(&entry->marker_index, marker_index, __ATOMIC_SEQ_CST);
+
+        if (__atomic_compare_exchange_n(slot, &nil, marker, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)) {
+            zend_tombs_graveyard_populate(zend_tombs_graveyard, marker_index, ops);
+        }
+    } else {
+        // Either another thread is already allocating (marker_index == -2) or we already have a marker and tomb (marker_index >= 0).
+
+        // If another thread is already allocating a new marker and tomb, wait for it to finish.
+        while ( __atomic_load_n(&entry->marker_index, __ATOMIC_SEQ_CST) == -2 ) {
+            __asm__ __volatile__("pause" ::: "memory");
+        }
+
+        // Update the op_array with the correct marker if needed
         zend_long marker_index = __atomic_load_n(&entry->marker_index, __ATOMIC_SEQ_CST);
         zend_bool **slot = (zend_bool**)(&ops->reserved[zend_tombs_resource]);
         zend_bool **marker = zend_tombs_markers_get(zend_tombs_markers, marker_index);
         __atomic_compare_exchange_n(slot, &nil, marker, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
-    } else {
-        // Try to allocate new marker and tomb
-        zend_long expected_marker_index = -1;
-
-        if (__atomic_compare_exchange_n(&entry->marker_index, &expected_marker_index, -2, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)) {
-            // We won the race to allocate a new marker and tomb (and set the marker_index to -2 to indicate we're working on it)
-            zend_bool **slot = (zend_bool**)(&ops->reserved[zend_tombs_resource]);
-            zend_bool **marker = zend_tombs_markers_create(zend_tombs_markers);
-
-            if (UNEXPECTED(NULL == marker)) {
-                // no marker space left
-                // also reset the marker_index to -1
-                __atomic_store_n(&entry->marker_index, -1, __ATOMIC_SEQ_CST);
-                return;
-            }
-
-            zend_long marker_index = zend_tombs_markers_index(zend_tombs_markers, (zend_bool*)marker);
-            __atomic_store_n(&entry->marker_index, marker_index, __ATOMIC_SEQ_CST);
-
-            if (__atomic_compare_exchange_n(slot, &nil, marker, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST)) {
-                zend_tombs_graveyard_populate(zend_tombs_graveyard, marker_index, ops);
-            }
-
-        } else {
-            // Another thread is already allocating a new marker and tomb.
-            // Wait for it to finish.
-            while ( __atomic_load_n(&entry->marker_index, __ATOMIC_SEQ_CST) == -2 ) {
-                __asm__ __volatile__("pause" ::: "memory");
-            }
-
-            // Update the op_array with the newly allocated marker, if needed (not sure if we had the same op_array or not)
-            zend_long marker_index = __atomic_load_n(&entry->marker_index, __ATOMIC_SEQ_CST);
-            zend_bool **slot = (zend_bool**)(&ops->reserved[zend_tombs_resource]);
-            zend_bool **marker = zend_tombs_markers_get(zend_tombs_markers, marker_index);
-            __atomic_compare_exchange_n(slot, &nil, marker, 0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
-        }
     }
 }
 
