@@ -10,7 +10,7 @@
 typedef struct _zend_tombs_function_entry_t {
     uint64_t hash;
     zend_long marker_index;
-    zend_bool used;
+    int8_t used;
 } zend_tombs_function_entry_t;
 
 typedef struct _zend_tombs_function_table_t {

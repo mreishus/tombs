@@ -49,25 +49,32 @@ zend_tombs_function_entry_t *zend_tombs_function_find_or_insert(uint64_t hash, z
 
     while (1) {
         zend_tombs_function_entry_t *entry = &table->entries[slot];
-        zend_bool expected_used = 0;
-        if (__atomic_compare_exchange_n(&entry->used, &expected_used, 1, 0, __ATOMIC_RELAXED, __ATOMIC_RELAXED)) {
-            // Found an empty slot, insert the new entry
+
+        int8_t expected_used = 0;
+        if (__atomic_compare_exchange_n(&entry->used, &expected_used, -1, 0, __ATOMIC_RELAXED, __ATOMIC_RELAXED)) {
+            // We acquired the entry for insertion
             entry->hash = hash;
-            entry->used = 1;
+            __atomic_store_n(&entry->used, 1, __ATOMIC_RELAXED);
             __atomic_add_fetch(&table->used, 1, __ATOMIC_RELAXED);
             return entry;
         }
+
+        // Wait while the entry is being modified by another thread
+        while (__atomic_load_n(&entry->used, __ATOMIC_RELAXED) == -1) {
+            __asm__ __volatile__("pause" ::: "memory");
+        }
+
         if (entry->hash == hash) {
             return entry;
         }
+
         slot = (slot + 1) % table->size;
+
         if (slot == starting_slot) {
             // Hash table is full
             return NULL;
         }
     }
-
-    return &table->entries[slot];
 }
 
 void zend_tombs_function_table_shutdown(zend_tombs_function_table_t *table) {
